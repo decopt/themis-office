@@ -1,0 +1,16 @@
+.env
+.git
+.gitignore
+output/
+output;C/
+__pycache__/
+*.py[cod]
+dashboard-ui/node_modules/
+screenshot_*.png
+office*.png
+instagram_*.png
+test_*.png
+test_*.jpg
+*.md
+referencia/
+deploy.sh

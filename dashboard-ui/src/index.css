@@ -1,0 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Themis AI Command Center Design System */
+
+@layer base {
+  :root {
+    --background: 30 8% 12%;
+    --foreground: 60 5% 94%;
+
+    --card: 25 25% 15%;
+    --card-foreground: 60 5% 94%;
+
+    --popover: 25 25% 15%;
+    --popover-foreground: 60 5% 94%;
+
+    --primary: 25 30% 18%;
+    --primary-foreground: 46 56% 52%;
+
+    --secondary: 50 11% 95%;
+    --secondary-foreground: 25 30% 18%;
+
+    --muted: 25 10% 22%;
+    --muted-foreground: 40 5% 60%;
+
+    --accent: 186 100% 50%;
+    --accent-foreground: 0 0% 5%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 25 15% 25%;
+    --input: 25 15% 25%;
+    --ring: 46 56% 52%;
+
+    --radius: 0.5rem;
+
+    --gold: 46 56% 52%;
+    --gold-foreground: 25 30% 12%;
+    --walnut: 25 30% 18%;
+    --marble: 50 11% 95%;
+    --cyan-glow: 186 100% 50%;
+
+    font-family: 'Inter', sans-serif;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    overflow: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Cinzel', serif;
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.02); opacity: 1; }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
+.animate-breathe {
+  animation: breathe 6s ease-in-out infinite;
+}

@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+  # Bot principal (agentes + agendador)
+  instagram-bot:
+    image: topagenda-bot:latest
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - topagenda_output:/app/output
+    networks:
+      - topagenda-net
+    restart: always
+
+  # Dashboard 3D (React + Flask API)
+  dashboard:
+    image: topagenda-dashboard:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    env_file:
+      - .env
+    volumes:
+      - topagenda_output:/app/output
+    networks:
+      - topagenda-net
+    ports:
+      - "5001:5000"
+    restart: always
+
+  # Servidor de imagens (acessivel pelo Instagram Graph API)
+  file-server:
+    image: nginx:alpine
+    volumes:
+      - topagenda_output:/usr/share/nginx/html:ro
+    networks:
+      - topagenda-net
+    ports:
+      - "8080:80"
+    restart: always
+
+volumes:
+  topagenda_output:
+    driver: local
+
+networks:
+  topagenda-net:
+    driver: bridge

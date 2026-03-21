@@ -1,0 +1,86 @@
+version: "3.8"
+
+# Docker Swarm stack — deploy com:
+#   docker stack deploy -c docker-stack.yml topagenda
+#
+# Pre-requisito: imagens ja buildadas na VPS com:
+#   docker-compose build
+
+services:
+  # Bot principal (agentes + agendador)
+  instagram-bot:
+    image: topagenda-bot:latest
+    env_file:
+      - .env
+    volumes:
+      - topagenda_output:/app/output
+    networks:
+      - topagenda-net
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        max_attempts: 5
+        delay: 10s
+
+  # Dashboard 3D (React + Flask API) — exposto via Traefik em insta.conectplay.top
+  dashboard:
+    image: topagenda-dashboard:latest
+    env_file:
+      - .env
+    volumes:
+      - topagenda_output:/app/output
+    networks:
+      - topagenda-net
+      - traefik-public
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        max_attempts: 5
+        delay: 10s
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=traefik-public"
+
+        # HTTPS
+        - "traefik.http.routers.topagenda.rule=Host(`insta.conectplay.top`)"
+        - "traefik.http.routers.topagenda.entrypoints=websecure"
+        - "traefik.http.routers.topagenda.tls=true"
+        - "traefik.http.routers.topagenda.tls.certresolver=letsencrypt"
+        - "traefik.http.services.topagenda.loadbalancer.server.port=5000"
+
+        # HTTP -> HTTPS redirect
+        - "traefik.http.routers.topagenda-http.rule=Host(`insta.conectplay.top`)"
+        - "traefik.http.routers.topagenda-http.entrypoints=web"
+        - "traefik.http.routers.topagenda-http.middlewares=redirect-https@docker"
+        - "traefik.http.middlewares.redirect-https.redirectscheme.scheme=https"
+        - "traefik.http.middlewares.redirect-https.redirectscheme.permanent=true"
+
+  # Servidor de imagens para o Instagram Graph API
+  file-server:
+    image: nginx:alpine
+    volumes:
+      - topagenda_output:/usr/share/nginx/html:ro
+    networks:
+      - topagenda-net
+    ports:
+      - target: 80
+        published: 8080
+        mode: host
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+volumes:
+  topagenda_output:
+    driver: local
+
+networks:
+  topagenda-net:
+    driver: overlay
+    attachable: true
+  traefik-public:
+    external: true
+    name: traefik-public

@@ -1,0 +1,32 @@
+# Environment
+.env
+
+# Claude Code internal
+.claude/
+
+# Output/generated files
+output/
+output;C/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+
+# Node / frontend build artifacts
+dashboard-ui/node_modules/
+dashboard-ui/dist/
+dashboard/static/assets/
+
+# Screenshots / test images
+screenshot_*.png
+office*.png
+instagram_*.png
+test_*.png
+test_*.jpg
+*.pyo
+
+# Misc
+.DS_Store
+*.bak
