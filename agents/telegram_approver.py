@@ -190,21 +190,29 @@ def _poll_decision() -> dict:
                 continue
 
             action = cb.get("data")
+            msg_id = cb.get("message", {}).get("message_id")
+
             _api("answerCallbackQuery", json={"callback_query_id": cb["id"]})
+
+            # Remove os botões da mensagem original para evitar cliques repetidos
+            if msg_id:
+                confirmations_text = {
+                    "approve":  "Acao registrada: APROVAR\nPublicando agora...",
+                    "reject":   "Acao registrada: REJEITAR\nPost nao sera publicado.",
+                    "recreate": "Acao registrada: RECRIAR\nGerando novo post...",
+                    "schedule": "Acao registrada: AGENDAR\nInforme o horario.",
+                }
+                _api("editMessageText", json={
+                    "chat_id": TELEGRAM_ADMIN_CHAT_ID,
+                    "message_id": msg_id,
+                    "text": confirmations_text.get(action, f"Acao: {action}"),
+                    "parse_mode": "HTML",
+                })
 
             if action == "schedule":
                 scheduled_time = _ask_schedule_time()
                 return {"action": "schedule", "scheduled_time": scheduled_time}
 
-            confirmations = {
-                "approve":  "Post aprovado! Publicando agora...",
-                "reject":   "Post rejeitado.",
-                "recreate": "Recriando post do zero...",
-            }
-            _api("sendMessage", json={
-                "chat_id": TELEGRAM_ADMIN_CHAT_ID,
-                "text": confirmations.get(action, f"Acao: {action}"),
-            })
             return {"action": action, "scheduled_time": None}
 
     # Timeout sem resposta — nao publica por seguranca

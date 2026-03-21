@@ -17,6 +17,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY state.py config.py pipeline.py telegram_bot.py scheduler.py ./
 COPY agents/ agents/
+COPY assets/ assets/
 COPY dashboard/ dashboard/
 
 # Copy React build into dashboard/static
