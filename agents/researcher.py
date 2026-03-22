@@ -1,87 +1,197 @@
 """
 Agente 0 - Pesquisador
-Le os arquivos de referencias (references/) e retorna um contexto condensado
-para o Estrategista usar ao definir o tema do proximo post.
+Combina referencias locais (.md) com pesquisa web em tempo real.
 
-Nao faz chamadas externas — apenas consolida o conhecimento dos .md files.
-Para atualizar os patterns com analise de URLs, execute: python update_references.py
+Fluxo:
+1. Le brand.md + domain-framework.md + patterns/*.md (base de conhecimento)
+2. Scraping com Playwright: DuckDuckGo (2 queries) + Google Trends BR
+3. Analisa o texto coletado com qwen2.5:3b → extrai insights acionaveis
+4. Retorna contexto consolidado para o Estrategista
+
+Se o Playwright ou a web falharem, cai graciosamente para so os .md locais.
 """
 import os
+import requests as req
 from pathlib import Path
+from datetime import datetime
+from config import OLLAMA_BASE_URL, OLLAMA_MODEL
 
 REFERENCES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "references")
 
+# Queries de pesquisa — ajuste conforme necessidade
+SEARCH_QUERIES = [
+    "salao barbearia manicure dicas instagram engajamento 2025",
+    "pequenos negocios autonomo agenda clientes fidelizacao brasil",
+]
 
-def _read_file(path: str, max_chars: int = 3000) -> str:
-    """Le arquivo com limite de caracteres."""
+
+# ── Helpers locais ─────────────────────────────────────────────
+
+def _read_file(path: str, max_chars: int = 2000) -> str:
     try:
         with open(path, "r", encoding="utf-8") as f:
-            content = f.read()
-        return content[:max_chars] if len(content) > max_chars else content
+            return f.read()[:max_chars]
     except Exception:
         return ""
 
 
-def _load_patterns() -> list[dict]:
-    """Carrega todos os arquivos de patterns gerados pelo update_references.py."""
+def _load_patterns() -> list:
     patterns_dir = os.path.join(REFERENCES_DIR, "patterns")
     if not os.path.exists(patterns_dir):
         return []
-
     results = []
     for path in Path(patterns_dir).glob("*.md"):
-        if path.name == ".gitkeep":
-            continue
-        content = _read_file(str(path), max_chars=1500)
+        content = _read_file(str(path), 1200)
         if content:
             results.append({"source": path.stem, "content": content})
-
     return results
 
 
+# ── Web scraping ───────────────────────────────────────────────
+
+def _scrape_web(queries: list) -> str:
+    """
+    Abre um unico browser Playwright e faz todas as pesquisas.
+    Retorna texto combinado para analise.
+    """
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        print("  [Pesquisador] Playwright nao disponivel — pulando pesquisa web")
+        return ""
+
+    results = []
+
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(args=["--no-sandbox", "--disable-setuid-sandbox"])
+
+            # DuckDuckGo: uma pagina por query
+            for query in queries:
+                print(f"  [Pesquisador] Buscando: {query[:55]}...")
+                try:
+                    page = browser.new_page()
+                    url = f"https://duckduckgo.com/html/?q={query.replace(' ', '+')}&kl=br-pt"
+                    page.goto(url, wait_until="domcontentloaded", timeout=20000)
+
+                    titles   = page.locator(".result__title").all_text_contents()
+                    snippets = page.locator(".result__snippet").all_text_contents()
+
+                    items = []
+                    for t, s in zip(titles[:7], snippets[:7]):
+                        t, s = t.strip(), s.strip()
+                        if t and s:
+                            items.append(f"• {t}: {s}")
+
+                    if items:
+                        results.append(f"Busca '{query}':\n" + "\n".join(items))
+                    page.close()
+                except Exception as e:
+                    print(f"  [Pesquisador] Busca falhou ({query[:30]}): {e}")
+
+            # Google Trends Brasil
+            print("  [Pesquisador] Coletando Google Trends Brasil...")
+            try:
+                page = browser.new_page()
+                page.goto(
+                    "https://trends.google.com/trending?geo=BR",
+                    wait_until="networkidle", timeout=25000
+                )
+                page.wait_for_timeout(2000)
+                text = page.inner_text("body")
+                lines = [l.strip() for l in text.splitlines()
+                         if len(l.strip()) > 8 and not l.strip().startswith(("©", "http"))]
+                if lines:
+                    results.append("Trending Google Brasil:\n" + "\n".join(lines[:30]))
+                page.close()
+            except Exception as e:
+                print(f"  [Pesquisador] Google Trends falhou: {e}")
+
+            browser.close()
+
+    except Exception as e:
+        print(f"  [Pesquisador] Browser error: {e}")
+
+    return "\n\n".join(results)
+
+
+# ── Analise com IA ─────────────────────────────────────────────
+
+def _ollama_analyze(web_text: str) -> str:
+    """Usa qwen2.5:3b para transformar texto bruto em insights acionaveis."""
+    today = datetime.now().strftime("%d/%m/%Y")
+    prompt = f"""Voce e um analista de marketing digital para pequenos negocios brasileiros. Hoje e {today}.
+
+Analise os textos abaixo coletados da web (buscas e tendencias).
+
+Seu objetivo: extrair 4-5 INSIGHTS ESPECIFICOS E ACIONAVEIS para criar posts no Instagram
+do Top Agenda — app de agendamento para barbeiros, cabeleireiros, manicures, esteticistas
+e outros profissionais autonomos brasileiros.
+
+Para cada insight responda:
+- O que esta em alta ou sendo discutido
+- Como isso se conecta com a dor do autonomo (agenda, clientes, organizacao)
+- Sugestao de angulo para um post
+
+TEXTOS COLETADOS:
+{web_text[:3500]}
+
+Liste os insights numerados, em portugues, de forma objetiva. Max 400 palavras."""
+
+    try:
+        resp = req.post(
+            f"{OLLAMA_BASE_URL}/api/chat",
+            json={
+                "model": OLLAMA_MODEL,
+                "messages": [{"role": "user", "content": prompt}],
+                "stream": False,
+                "options": {"num_predict": 600},
+            },
+            timeout=90,
+        )
+        resp.raise_for_status()
+        return resp.json()["message"]["content"].strip()
+    except Exception as e:
+        print(f"  [Pesquisador] Analise Ollama falhou: {e}")
+        return ""
+
+
+# ── Entry point ────────────────────────────────────────────────
+
 def run() -> str:
     """
-    Consolida o conhecimento de referencias em um contexto para o Estrategista.
-    Retorna string vazia se nao houver referencias uteis.
+    Retorna contexto consolidado (referencias locais + pesquisa web)
+    para o Estrategista usar ao definir o tema do proximo post.
     """
     sections = []
 
     # 1. Framework de dominio
-    domain_path = os.path.join(REFERENCES_DIR, "domain-framework.md")
-    if os.path.exists(domain_path):
-        domain = _read_file(domain_path, max_chars=2500)
-        if domain:
-            sections.append(f"=== FRAMEWORK DO DOMINIO ===\n{domain}")
+    domain = _read_file(os.path.join(REFERENCES_DIR, "domain-framework.md"), 2000)
+    if domain:
+        sections.append(f"=== FRAMEWORK DO DOMINIO ===\n{domain}")
 
     # 2. Brand guidelines
-    brand_path = os.path.join(REFERENCES_DIR, "brand.md")
-    if os.path.exists(brand_path):
-        brand = _read_file(brand_path, max_chars=2000)
-        if brand:
-            sections.append(f"=== GUIA DA MARCA ===\n{brand}")
+    brand = _read_file(os.path.join(REFERENCES_DIR, "brand.md"), 1500)
+    if brand:
+        sections.append(f"=== GUIA DA MARCA ===\n{brand}")
 
-    # 3. Patterns gerados automaticamente (analise de URLs)
-    patterns = _load_patterns()
-    if patterns:
-        pattern_text = "\n\n".join(
-            f"--- Referencia: {p['source']} ---\n{p['content']}"
-            for p in patterns
-        )
-        sections.append(f"=== ANALISE DE REFERENCIAS EXTERNAS ===\n{pattern_text}")
+    # 3. Pesquisa web em tempo real
+    web_raw = _scrape_web(SEARCH_QUERIES)
+    if web_raw:
+        print(f"  [Pesquisador] {len(web_raw)} chars coletados — analisando com IA...")
+        analysis = _ollama_analyze(web_raw)
+        if analysis:
+            sections.append(f"=== TENDENCIAS E INSIGHTS WEB (TEMPO REAL) ===\n{analysis}")
+    else:
+        print("  [Pesquisador] Pesquisa web sem resultados — usando apenas referencias locais")
 
-    # 4. Notas manuais de sources.md (secao de observacoes)
-    sources_path = os.path.join(REFERENCES_DIR, "sources.md")
-    if os.path.exists(sources_path):
-        sources = _read_file(sources_path, max_chars=2000)
-        # Extrai apenas a parte de observacoes manuais (apos "## Posts de Alto Desempenho")
-        if "Posts de Alto Desempenho" in sources:
-            obs_section = sources.split("Posts de Alto Desempenho", 1)[1]
-            if obs_section.strip():
-                sections.append(f"=== OBSERVACOES DE CONTEUDO DE ALTO DESEMPENHO ===\n{obs_section[:1500]}")
+    # 4. Patterns manuais
+    for p in _load_patterns():
+        sections.append(f"=== REFERENCIA: {p['source']} ===\n{p['content']}")
 
     if not sections:
         return ""
 
     context = "\n\n".join(sections)
-    print(f"  [Pesquisador] Contexto carregado: {len(context)} chars, {len(patterns)} pattern(s) externo(s)")
+    print(f"  [Pesquisador] Contexto final: {len(context)} chars")
     return context
