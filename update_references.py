@@ -4,18 +4,14 @@ Atualizador de Referencias — Top Agenda Instagram Bot
 Uso: python update_references.py
 
 Le as URLs em references/sources.md, acessa cada uma com Playwright,
-tira screenshot e usa Gemini Vision para analisar os padroes de conteudo.
-Os resultados sao salvos em references/patterns/<nome>.md
+tira screenshot e gera um arquivo .md esqueleto em references/patterns/<nome>.md
+para preenchimento manual ou analise futura.
 
-Execute manualmente ou configure um cron semanal.
+Execute manualmente quando quiser atualizar as referencias.
 Requer: playwright install chromium (uma vez)
 """
 import os
 import re
-import sys
-import base64
-import tempfile
-from pathlib import Path
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -83,75 +79,38 @@ def _screenshot_url(url: str, width: int = 1080, height: int = 1080) -> bytes | 
         return None
 
 
-def _analyze_with_gemini(screenshot_bytes: bytes, url: str, description: str) -> str:
-    """Usa Gemini Vision para analisar o screenshot e extrair padroes."""
-    try:
-        from google import genai
-        from google.genai import types
-    except ImportError:
-        print("  google-genai nao instalado")
-        return ""
-
-    api_key = os.getenv("GOOGLE_API_KEY")
-    if not api_key:
-        print("  GOOGLE_API_KEY nao configurada")
-        return ""
-
-    client = genai.Client(api_key=api_key)
-
-    # Codifica imagem como base64
-    img_b64 = base64.b64encode(screenshot_bytes).decode()
-
-    prompt = f"""Voce e um analista de marketing digital especializado em Instagram para pequenos negocios brasileiros.
-
-Analise este screenshot da pagina: {url}
-Descricao: {description if description else "conta/pagina de referencia"}
-
-Analise visualmente o conteudo e extraia:
-
-1. **PADROES VISUAIS:** Quais sao os elementos visuais predominantes? (cores, tipografia, estilo de foto, layout)
-
-2. **PADROES DE CONTEUDO:** Que tipo de conteudo aparece? (educativo, promocional, inspiracional, humor)
-
-3. **LINGUAGEM E TOM:** Como e o texto? (formal/informal, tecnico/simples, comprido/curto)
-
-4. **HOOKS E TITULOS:** Quais padroes de hook aparecem? O que chama atencao?
-
-5. **ESTRUTURA DE POST:** Como os posts sao estruturados? (carrossel, post unico, reels?)
-
-6. **INSIGHTS APLICAVEIS:** O que o Top Agenda pode aprender e adaptar para o publico de barbeiros,
-   cabeleireiros, manicures e profissionais de beleza brasileiros?
-
-Seja especifico e pratico. Foque em padroes replicaveis, nao em detalhes genericos."""
-
-    try:
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=[
-                types.Part.from_bytes(data=screenshot_bytes, mime_type="image/jpeg"),
-                types.Part.from_text(text=prompt)
-            ]
-        )
-        return response.text.strip()
-    except Exception as e:
-        print(f"  Gemini Vision erro: {e}")
-        return ""
-
-
 def _save_pattern(name: str, url: str, description: str, analysis: str):
     """Salva o arquivo de pattern em references/patterns/."""
     os.makedirs(PATTERNS_DIR, exist_ok=True)
     path = os.path.join(PATTERNS_DIR, f"{name}.md")
 
-    content = f"""# Analise de Referencia: {url}
+    content = f"""# Referencia: {url}
 
 **Descricao:** {description if description else "Sem descricao"}
-**Data da analise:** {datetime.now().strftime("%d/%m/%Y %H:%M")}
+**Data:** {datetime.now().strftime("%d/%m/%Y %H:%M")}
 **URL:** {url}
 
 ---
 
-{analysis}
+## Padroes Visuais
+<!-- O que chama atencao no design? Cores, layout, tipografia -->
+
+
+## Tipo de Conteudo
+<!-- Educativo, promocional, inspiracional, humor? -->
+
+
+## Linguagem e Tom
+<!-- Formal/informal, tecnico/simples? Exemplos de frases marcantes -->
+
+
+## Hooks e Titulos
+<!-- Quais formatos de hook aparecem? -->
+
+
+## Insights Aplicaveis
+<!-- O que o Top Agenda pode adaptar para barbeiros, cabeleireiros, manicures? -->
+
 """
     with open(path, "w", encoding="utf-8") as f:
         f.write(content)
@@ -184,26 +143,23 @@ def main():
 
         print(f"[{i}/{len(urls)}] Analisando: {url}")
 
-        # Screenshot
+        # Screenshot (opcional — util para consulta manual)
         print(f"  Tirando screenshot...")
         screenshot = _screenshot_url(url)
-        if not screenshot:
-            print(f"  Pulando — screenshot falhou")
-            continue
+        if screenshot:
+            img_path = os.path.join(PATTERNS_DIR, f"{name}.jpg")
+            os.makedirs(PATTERNS_DIR, exist_ok=True)
+            with open(img_path, "wb") as f:
+                f.write(screenshot)
+            print(f"  Screenshot salvo: references/patterns/{name}.jpg")
 
-        # Analise Gemini Vision
-        print(f"  Analisando com Gemini Vision...")
-        analysis = _analyze_with_gemini(screenshot, url, description)
-        if not analysis:
-            print(f"  Pulando — analise falhou")
-            continue
-
-        # Salva
-        _save_pattern(name, url, description, analysis)
-        print(f"  OK\n")
+        # Gera esqueleto .md para preenchimento manual
+        _save_pattern(name, url, description, "")
+        print(f"  Preencha manualmente: references/patterns/{name}.md\n")
 
     print("=" * 55)
-    print("Concluido! Execute o bot para usar as novas referencias.")
+    print("Concluido! Preencha os arquivos .md em references/patterns/")
+    print("e execute o bot para usar as novas referencias.")
     print("=" * 55)
 
 

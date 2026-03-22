@@ -9,14 +9,15 @@ Incorpora:
 import json
 import random
 from datetime import datetime
-from google import genai
+import anthropic
 from config import (
-    GOOGLE_API_KEY, PRODUCT_NAME, PRODUCT_URL, PRODUCT_DESCRIPTION,
-    GEMINI_TEXT_MODEL, CONTENT_PILLARS, PILLAR_WEIGHTS,
+    OLLAMA_BASE_URL, OLLAMA_MODEL,
+    PRODUCT_NAME, PRODUCT_URL, PRODUCT_DESCRIPTION,
+    CONTENT_PILLARS, PILLAR_WEIGHTS,
     HOOK_TYPES, BRAND_VOICE, TARGET_NICHES, BRAZILIAN_SEASONAL,
 )
 
-client = genai.Client(api_key=GOOGLE_API_KEY)
+client = anthropic.Anthropic(base_url=OLLAMA_BASE_URL, api_key="ollama")
 
 
 def _pick_pillar() -> dict:
@@ -113,12 +114,13 @@ REGRAS:
 - content_type feature_showcase: slides entre 2 e 4
 - theme deve ser especifico, nao generico"""
 
-    response = client.models.generate_content(
-        model=GEMINI_TEXT_MODEL,
-        contents=prompt
+    response = client.messages.create(
+        model=OLLAMA_MODEL,
+        max_tokens=1024,
+        messages=[{"role": "user", "content": prompt}]
     )
 
-    text = response.text.strip()
+    text = response.content[0].text.strip()
     if text.startswith("```"):
         text = text.split("```")[1]
         if text.startswith("json"):

@@ -1,13 +1,4 @@
-# ─── Stage 1: Build React app ────────────────────────────────
-FROM node:20-alpine AS builder
-
-WORKDIR /build
-COPY dashboard-ui/package.json ./
-RUN npm install --no-audit --no-fund
-COPY dashboard-ui/ .
-RUN npm run build
-
-# ─── Stage 2: Python + Flask serving built React ─────────────
+# Dashboard — Python + Flask serving static HTML
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -19,10 +10,8 @@ COPY state.py config.py pipeline.py telegram_bot.py scheduler.py ./
 COPY agents/ agents/
 COPY assets/ assets/
 COPY dashboard/ dashboard/
+COPY references/ references/
 
-# Copy React build into dashboard/static
-COPY --from=builder /build/dist dashboard/static/
-
-RUN mkdir -p /app/output
+RUN mkdir -p /app/output /app/references/patterns
 
 CMD ["python", "dashboard/app.py"]

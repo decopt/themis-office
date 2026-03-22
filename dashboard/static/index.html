@@ -1,27 +1,280 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- TODO: Set the document title to the name of your application -->
-    <title>Lovable App</title>
-    <meta name="description" content="Lovable Generated Project" />
-    <meta name="author" content="Lovable" />
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Top Agenda — Bot Monitor</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg:     #080e1c;
+    --card:   #0f1729;
+    --border: #1e2d4a;
+    --blue:   #1B6FBB;
+    --green:  #4DB648;
+    --yellow: #FFC107;
+    --red:    #ef4444;
+    --text:   #e2e8f0;
+    --muted:  #64748b;
+    --r:      12px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg); color: var(--text);
+    min-height: 100vh; padding: 20px;
+  }
 
-    <!-- TODO: Update og:title to match your application name -->
-    <meta property="og:title" content="Lovable App" />
-    <meta property="og:description" content="Lovable Generated Project" />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+  /* header */
+  .header {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:24px; flex-wrap:wrap; gap:12px;
+  }
+  .header h1 { font-size:20px; font-weight:700; color:#fff; display:flex; align-items:center; gap:10px; }
+  .header h1 span { color:var(--blue); }
+  .row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .status-pill {
+    display:flex; align-items:center; gap:8px;
+    padding:6px 14px; border-radius:99px; font-size:13px; font-weight:600;
+    border:1px solid var(--border); background:var(--card);
+  }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--muted); flex-shrink:0; }
+  .dot.running { background:var(--blue); animation:pulse 1s infinite; }
+  .dot.idle    { background:var(--green); }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
+  .btn {
+    padding:8px 18px; background:var(--blue); color:#fff;
+    border:none; border-radius:8px; font-size:13px; font-weight:600;
+    cursor:pointer; transition:opacity .2s;
+  }
+  .btn:hover { opacity:.85; }
+  .btn:disabled { opacity:.35; cursor:not-allowed; }
+  #last-update { font-size:11px; color:var(--muted); }
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@Lovable" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-    <script type="module" crossorigin src="/assets/index-DCdSUGah.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-BYlvApTe.css">
-  </head>
+  /* stats */
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:14px; margin-bottom:24px; }
+  .stat-card { background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:18px 20px; }
+  .stat-label { font-size:11px; color:var(--muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:.5px; }
+  .stat-value { font-size:28px; font-weight:700; color:#fff; }
+  .stat-sub   { font-size:11px; color:var(--muted); margin-top:4px; }
 
-  <body>
-    <div id="root"></div>
-  </body>
+  /* section title */
+  .stitle { font-size:11px; text-transform:uppercase; letter-spacing:.8px; color:var(--muted); margin-bottom:12px; font-weight:600; }
+
+  /* pipeline */
+  .pipeline { display:flex; gap:6px; margin-bottom:24px; overflow-x:auto; padding-bottom:6px; align-items:stretch; }
+  .agent-card {
+    flex:1; min-width:90px;
+    background:var(--card); border:1.5px solid var(--border); border-radius:var(--r);
+    padding:12px 10px; text-align:center; transition:border-color .3s,background .3s;
+  }
+  .agent-card.running { border-color:var(--blue); background:rgba(27,111,187,.1); }
+  .agent-card.done    { border-color:var(--green); }
+  .agent-card.error   { border-color:var(--red); }
+  .agent-num  { font-size:10px; color:var(--muted); margin-bottom:3px; }
+  .agent-icon { font-size:18px; margin-bottom:5px; }
+  .agent-name { font-size:11px; font-weight:600; color:var(--text); margin-bottom:5px; }
+  .agent-badge {
+    font-size:9px; padding:2px 7px; border-radius:99px; font-weight:700; display:inline-block;
+  }
+  .agent-badge.idle    { background:rgba(100,116,139,.15); color:var(--muted); }
+  .agent-badge.running { background:rgba(27,111,187,.25); color:#60a5fa; }
+  .agent-badge.done    { background:rgba(77,182,72,.2); color:#4ade80; }
+  .agent-badge.error   { background:rgba(239,68,68,.2); color:#f87171; }
+  .agent-detail { font-size:9px; color:var(--muted); margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .arrow { color:var(--border); font-size:16px; display:flex; align-items:center; flex-shrink:0; margin-top:10px; }
+
+  /* bottom grid */
+  .bottom { display:grid; grid-template-columns:1fr 360px; gap:20px; }
+  @media(max-width:900px){ .bottom { grid-template-columns:1fr; } }
+
+  /* card */
+  .card { background:var(--card); border:1px solid var(--border); border-radius:var(--r); overflow:hidden; }
+  .card-head { padding:14px 18px; border-bottom:1px solid var(--border); font-size:13px; font-weight:600; }
+  .empty { padding:32px; text-align:center; color:var(--muted); font-size:13px; }
+
+  /* table */
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  th { padding:9px 14px; text-align:left; color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid var(--border); }
+  td { padding:9px 14px; border-bottom:1px solid rgba(30,45,74,.4); vertical-align:middle; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:rgba(27,111,187,.04); }
+  .badge { padding:2px 7px; border-radius:99px; font-size:10px; font-weight:700; text-transform:uppercase; }
+  .badge.published { background:rgba(77,182,72,.2); color:#4ade80; }
+  .badge.simulated { background:rgba(27,111,187,.2); color:#60a5fa; }
+  .badge.error     { background:rgba(239,68,68,.2); color:#f87171; }
+  .badge.cancelled { background:rgba(100,116,139,.2); color:var(--muted); }
+  .badge.timeout   { background:rgba(255,193,7,.15); color:var(--yellow); }
+  .badge.rejected  { background:rgba(239,68,68,.15); color:#f87171; }
+  .sc { display:inline-flex; align-items:center; justify-content:center; width:34px; height:20px; border-radius:5px; font-size:10px; font-weight:700; }
+  .sc.hi { background:rgba(77,182,72,.2); color:#4ade80; }
+  .sc.mid{ background:rgba(255,193,7,.15); color:var(--yellow); }
+  .sc.lo { background:rgba(239,68,68,.2); color:#f87171; }
+  .tc { max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); }
+  .tm { color:var(--muted); white-space:nowrap; font-size:11px; }
+
+  /* chart */
+  .chart-wrap { padding:16px; }
+  .chart-inner { position:relative; height:210px; }
+
+  footer { margin-top:20px; text-align:center; font-size:11px; color:var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Top Agenda <span>//</span> Bot Monitor</h1>
+  <div class="row">
+    <div class="status-pill">
+      <div class="dot" id="sdot"></div>
+      <span id="stxt">Conectando...</span>
+    </div>
+    <span id="last-update"></span>
+    <button class="btn" id="btn-run" onclick="runPipeline()">▶ Rodar agora</button>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat-card">
+    <div class="stat-label">Posts hoje</div>
+    <div class="stat-value" id="s-today">—</div>
+    <div class="stat-sub" id="s-today-sub"></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Total publicados</div>
+    <div class="stat-value" id="s-total">—</div>
+    <div class="stat-sub">últimos 50 registros</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Score médio</div>
+    <div class="stat-value" id="s-score">—</div>
+    <div class="stat-sub">revisão de qualidade</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Horários agendados</div>
+    <div class="stat-value" id="s-sched" style="font-size:15px;padding-top:6px">—</div>
+    <div class="stat-sub">Brasília</div>
+  </div>
+</div>
+
+<div class="stitle">Pipeline de Agentes</div>
+<div class="pipeline" id="pipeline"></div>
+
+<div class="bottom">
+  <div class="card">
+    <div class="card-head">Últimas Publicações</div>
+    <div id="posts-wrap"><div class="empty">Carregando...</div></div>
+  </div>
+  <div class="card">
+    <div class="card-head">Score por Post</div>
+    <div class="chart-wrap">
+      <div class="chart-inner"><canvas id="chart"></canvas></div>
+      <div style="font-size:10px;color:var(--muted);text-align:center;margin-top:6px">
+        linha verde = mínimo aprovado (80)
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>Top Agenda Instagram Bot &nbsp;·&nbsp; atualiza a cada 3s</footer>
+
+<script>
+const ICONS  = { researcher:'🔍', strategist:'🧠', scriptwriter:'✍️', designer:'🎨', editor:'🖼️', reviewer:'✅', telegram_approver:'📱', publisher:'🚀' };
+const NAMES  = { researcher:'Pesquisador', strategist:'Estrategista', scriptwriter:'Roteirista', designer:'Designer', editor:'Editor', reviewer:'Revisor', telegram_approver:'Aprovação', publisher:'Publisher' };
+const SLABEL = { idle:'aguardando', running:'rodando', done:'concluído', error:'erro' };
+
+let chart = null;
+
+function initChart() {
+  chart = new Chart(document.getElementById('chart').getContext('2d'), {
+    type: 'bar',
+    data: { labels:[], datasets:[{ label:'Score', data:[], backgroundColor:[], borderRadius:4, borderSkipped:false }] },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c=>`Score: ${c.parsed.y}/100` } } },
+      scales:{
+        y:{ min:0, max:100, ticks:{color:'#64748b',font:{size:10}}, grid:{color:'rgba(30,45,74,.7)'} },
+        x:{ ticks:{color:'#64748b',font:{size:9},maxRotation:0}, grid:{display:false} }
+      }
+    },
+    plugins:[{
+      id:'minLine',
+      afterDraw(c){ const {ctx,scales:{y}}=c,y80=y.getPixelForValue(80); ctx.save(); ctx.strokeStyle='rgba(77,182,72,.5)'; ctx.lineWidth=1; ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(c.chartArea.left,y80); ctx.lineTo(c.chartArea.right,y80); ctx.stroke(); ctx.restore(); }
+    }]
+  });
+}
+
+function updateChart(posts) {
+  if (!chart) return;
+  const d = posts.filter(p=>p.score!=null).slice(0,15).reverse();
+  chart.data.labels = d.map((_,i)=>`#${i+1}`);
+  chart.data.datasets[0].data = d.map(p=>p.score);
+  chart.data.datasets[0].backgroundColor = d.map(p=> p.score>=90?'rgba(77,182,72,.75)': p.score>=80?'rgba(27,111,187,.75)': p.score>=60?'rgba(255,193,7,.75)':'rgba(239,68,68,.75)');
+  chart.update('none');
+}
+
+function buildPipeline(meta, statuses, details) {
+  if (!meta||!meta.length) return;
+  document.getElementById('pipeline').innerHTML = meta.map((ag,i)=>`
+    <div class="agent-card ${statuses[ag.id]||'idle'}">
+      <div class="agent-num">${String(i+1).padStart(2,'0')}</div>
+      <div class="agent-icon">${ICONS[ag.id]||'⚙️'}</div>
+      <div class="agent-name">${NAMES[ag.id]||ag.name}</div>
+      <span class="agent-badge ${statuses[ag.id]||'idle'}">${SLABEL[statuses[ag.id]]||'aguardando'}</span>
+      ${details[ag.id]?`<div class="agent-detail" title="${details[ag.id]}">${details[ag.id]}</div>`:''}
+    </div>
+    ${i<meta.length-1?'<div class="arrow">›</div>':''}
+  `).join('');
+}
+
+function buildPosts(posts) {
+  const w = document.getElementById('posts-wrap');
+  if (!posts||!posts.length){ w.innerHTML='<div class="empty">Nenhuma publicação ainda.</div>'; return; }
+  const sc = s => s==null?'—': `<span class="sc ${s>=80?'hi':s>=60?'mid':'lo'}">${s}</span>`;
+  const ft = iso => { if(!iso)return'—'; const d=new Date(iso); return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); };
+  w.innerHTML = `<table><thead><tr><th>Status</th><th>Tema</th><th>Score</th><th>Quando</th></tr></thead><tbody>
+    ${posts.slice(0,15).map(p=>`<tr>
+      <td><span class="badge ${p.status}">${p.status}</span></td>
+      <td class="tc" title="${p.theme||''}">${p.theme||'—'}</td>
+      <td>${sc(p.score)}</td>
+      <td class="tm">${ft(p.timestamp)}</td>
+    </tr>`).join('')}
+  </tbody></table>`;
+}
+
+function updateStatus(d) {
+  const running = d.running;
+  document.getElementById('sdot').className = 'dot '+(running?'running':'idle');
+  document.getElementById('stxt').textContent = running ? 'Rodando: '+(NAMES[d.current_agent]||d.current_agent||'...') : 'Aguardando';
+  document.getElementById('btn-run').disabled = running;
+  const s = d.stats||{};
+  document.getElementById('s-today').textContent = `${s.posts_today??0}/${s.max_today??3}`;
+  document.getElementById('s-today-sub').textContent = s.posts_today>=s.max_today?'limite atingido':'posts publicados';
+  document.getElementById('s-total').textContent = s.total_published??0;
+  document.getElementById('s-score').textContent = s.avg_score?`${s.avg_score}/100`:'—';
+  document.getElementById('s-sched').textContent = (s.schedule||[]).join(' · ');
+  document.getElementById('last-update').textContent = 'atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  buildPipeline(d.agents_meta, d.agents||{}, d.agent_details||{});
+}
+
+async function runPipeline() {
+  document.getElementById('btn-run').disabled = true;
+  try {
+    const r = await fetch('/api/run',{method:'POST'});
+    const j = await r.json();
+    if (j.error) { alert(j.error); document.getElementById('btn-run').disabled=false; }
+  } catch(e) { alert('Erro ao iniciar'); document.getElementById('btn-run').disabled=false; }
+}
+
+async function poll() {
+  try {
+    const [sr,pr] = await Promise.all([fetch('/api/status'),fetch('/api/posts')]);
+    const [s,p] = await Promise.all([sr.json(),pr.json()]);
+    updateStatus(s); buildPosts(p); updateChart(p);
+  } catch(e) { document.getElementById('stxt').textContent='Sem conexão'; }
+}
+
+initChart(); poll(); setInterval(poll,3000);
+</script>
+</body>
 </html>

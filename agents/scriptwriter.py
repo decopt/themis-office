@@ -9,13 +9,14 @@ Incorpora:
 """
 import json
 import random
-from google import genai
+import anthropic
 from config import (
-    GOOGLE_API_KEY, PRODUCT_NAME, PRODUCT_URL, INSTAGRAM_HANDLE,
-    GEMINI_CREATIVE_MODEL, HOOK_TYPES, BRAND_VOICE,
+    OLLAMA_BASE_URL, OLLAMA_MODEL,
+    PRODUCT_NAME, PRODUCT_URL, INSTAGRAM_HANDLE,
+    HOOK_TYPES, BRAND_VOICE,
 )
 
-client = genai.Client(api_key=GOOGLE_API_KEY)
+client = anthropic.Anthropic(base_url=OLLAMA_BASE_URL, api_key="ollama")
 
 # Hashtags da marca (sempre incluidas)
 HASHTAGS_BRANDED = [
@@ -138,12 +139,13 @@ REGRAS CRITICAS:
 - Para carrossel: cada slide deve ter uma ideia propria que avança a narrativa
 - Slide 1 = hook / Slides do meio = desenvolvimento / Ultimo slide = CTA"""
 
-    response = client.models.generate_content(
-        model=GEMINI_CREATIVE_MODEL,
-        contents=prompt
+    response = client.messages.create(
+        model=OLLAMA_MODEL,
+        max_tokens=2048,
+        messages=[{"role": "user", "content": prompt}]
     )
 
-    text = response.text.strip()
+    text = response.content[0].text.strip()
     if text.startswith("```"):
         text = text.split("```")[1]
         if text.startswith("json"):

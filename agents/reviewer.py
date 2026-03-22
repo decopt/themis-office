@@ -4,10 +4,10 @@ Analisa o conteúdo e decide se aprova ou solicita ajuste.
 """
 import json
 import os
-from google import genai
-from config import GOOGLE_API_KEY, GEMINI_TEXT_MODEL, PRODUCT_NAME
+import anthropic
+from config import OLLAMA_BASE_URL, OLLAMA_MODEL, PRODUCT_NAME
 
-client = genai.Client(api_key=GOOGLE_API_KEY)
+client = anthropic.Anthropic(base_url=OLLAMA_BASE_URL, api_key="ollama")
 
 MAX_CAPTION_LENGTH = 2200
 MIN_HASHTAGS = 10
@@ -159,12 +159,13 @@ Retorne APENAS um JSON valido:
   "strengths": ["ponto forte 1", "ponto forte 2"]
 }}"""
 
-    response = client.models.generate_content(
-        model=GEMINI_TEXT_MODEL,
-        contents=prompt
+    response = client.messages.create(
+        model=OLLAMA_MODEL,
+        max_tokens=2048,
+        messages=[{"role": "user", "content": prompt}]
     )
 
-    text = response.text.strip()
+    text = response.content[0].text.strip()
     if text.startswith("```"):
         text = text.split("```")[1]
         if text.startswith("json"):

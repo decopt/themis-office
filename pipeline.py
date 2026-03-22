@@ -90,7 +90,7 @@ def run() -> dict:
 
             # ── Agente 3: Designer ──────────────────────────────
             state.set_agent("designer", "running")
-            print(f"\n[Agente 3] Designer (Imagen 3)...")
+            print(f"\n[Agente 3] Designer (gradient backgrounds)...")
             image_paths = designer.run(script, strategy)
             print(f"  Imagens geradas: {len(image_paths)}")
             if not image_paths:

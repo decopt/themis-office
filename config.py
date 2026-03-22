@@ -3,7 +3,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 INSTAGRAM_USER_ID = os.getenv("INSTAGRAM_USER_ID")
 INSTAGRAM_ACCESS_TOKEN = os.getenv("INSTAGRAM_ACCESS_TOKEN")
 PUBLIC_IMAGE_BASE_URL = os.getenv("PUBLIC_IMAGE_BASE_URL", "http://5.189.147.171:8080")
@@ -32,10 +31,9 @@ INSTAGRAM_HANDLE = "@topagenda.online"
 OUTPUT_DIR = os.getenv("OUTPUT_DIR", "/app/output")
 ASSETS_DIR = os.getenv("ASSETS_DIR", "/app/assets")
 
-# Gemini models
-GEMINI_TEXT_MODEL = "gemini-2.5-flash"
-GEMINI_CREATIVE_MODEL = "nano-banana-pro-preview"  # para roteiros criativos
-GEMINI_IMAGE_MODEL = "imagen-4.0-generate-001"     # Imagen 4 - melhor qualidade
+# Ollama — modelo local gratuito (roda na VPS)
+OLLAMA_BASE_URL  = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434")
+OLLAMA_MODEL     = os.getenv("OLLAMA_MODEL", "qwen3.5")
 
 # ── Pilares de Conteúdo Estratégicos ─────────────────────────
 # Inspirado em: agency-agents (Content Creator + Brand Guardian)
