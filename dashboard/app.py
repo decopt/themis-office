@@ -197,15 +197,16 @@ def api_instagram():
 
     try:
         import requests as req
+        GRAPH = "https://graph.facebook.com/v21.0"
         profile = req.get(
-            f"https://graph.instagram.com/{INSTAGRAM_USER_ID}",
-            params={"fields": "name,biography,followers_count,media_count,profile_picture_url",
+            f"{GRAPH}/{INSTAGRAM_USER_ID}",
+            params={"fields": "name,followers_count,media_count,profile_picture_url",
                     "access_token": INSTAGRAM_ACCESS_TOKEN},
             timeout=10
         ).json()
 
         media = req.get(
-            f"https://graph.instagram.com/{INSTAGRAM_USER_ID}/media",
+            f"{GRAPH}/{INSTAGRAM_USER_ID}/media",
             params={"fields": "id,caption,media_type,media_url,thumbnail_url,timestamp,permalink",
                     "limit": 9, "access_token": INSTAGRAM_ACCESS_TOKEN},
             timeout=10
