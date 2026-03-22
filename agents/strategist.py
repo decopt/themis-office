@@ -8,11 +8,9 @@ Incorpora:
 """
 import json
 import random
-import requests
 from datetime import datetime
-from agents import skill_loader
+from agents import skill_loader, llm
 from config import (
-    OLLAMA_BASE_URL, OLLAMA_MODEL,
     PRODUCT_NAME, PRODUCT_URL, PRODUCT_DESCRIPTION,
     CONTENT_PILLARS, PILLAR_WEIGHTS,
     HOOK_TYPES, BRAND_VOICE, TARGET_NICHES, BRAZILIAN_SEASONAL,
@@ -20,16 +18,6 @@ from config import (
 
 SKILL = skill_loader.load("strategist")
 
-
-def _ollama(prompt: str, max_tokens: int = 1024) -> str:
-    resp = requests.post(
-        f"{OLLAMA_BASE_URL}/api/chat",
-        json={"model": OLLAMA_MODEL, "messages": [{"role": "user", "content": prompt}], "stream": False,
-              "options": {"num_predict": max_tokens}},
-        timeout=300
-    )
-    resp.raise_for_status()
-    return resp.json()["message"]["content"].strip()
 
 
 def _pick_pillar() -> dict:
@@ -128,7 +116,7 @@ REGRAS:
 - content_type feature_showcase: slides entre 2 e 4
 - theme deve ser especifico, nao generico"""
 
-    text = _ollama(prompt, max_tokens=1024)
+    text = llm.generate(prompt, max_tokens=1024)
     if text.startswith("```"):
         text = text.split("```")[1]
         if text.startswith("json"):

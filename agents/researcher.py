@@ -5,16 +5,17 @@ Combina referencias locais (.md) com pesquisa web em tempo real.
 Fluxo:
 1. Le brand.md + domain-framework.md + patterns/*.md (base de conhecimento)
 2. Scraping com Playwright: DuckDuckGo (2 queries) + Google Trends BR
-3. Analisa o texto coletado com qwen2.5:3b → extrai insights acionaveis
+3. Analisa o texto coletado com Gemini → extrai insights acionaveis
 4. Retorna contexto consolidado para o Estrategista
 
 Se o Playwright ou a web falharem, cai graciosamente para so os .md locais.
 """
 import os
-import requests as req
 from pathlib import Path
 from datetime import datetime
-from config import OLLAMA_BASE_URL, OLLAMA_MODEL
+from agents import llm, skill_loader
+
+SKILL = skill_loader.load("researcher")
 
 REFERENCES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "references")
 
@@ -117,10 +118,11 @@ def _scrape_web(queries: list) -> str:
 
 # ── Analise com IA ─────────────────────────────────────────────
 
-def _ollama_analyze(web_text: str) -> str:
-    """Usa qwen2.5:3b para transformar texto bruto em insights acionaveis."""
+def _analyze_web(web_text: str) -> str:
+    """Usa Gemini para transformar texto bruto em insights acionaveis."""
     today = datetime.now().strftime("%d/%m/%Y")
-    prompt = f"""Voce e um analista de marketing digital para pequenos negocios brasileiros. Hoje e {today}.
+    skill_section = f"{SKILL}\n---\n" if SKILL else ""
+    prompt = f"""{skill_section}Hoje e {today}.
 
 Analise os textos abaixo coletados da web (buscas e tendencias).
 
@@ -139,20 +141,9 @@ TEXTOS COLETADOS:
 Liste os insights numerados, em portugues, de forma objetiva. Max 400 palavras."""
 
     try:
-        resp = req.post(
-            f"{OLLAMA_BASE_URL}/api/chat",
-            json={
-                "model": OLLAMA_MODEL,
-                "messages": [{"role": "user", "content": prompt}],
-                "stream": False,
-                "options": {"num_predict": 600},
-            },
-            timeout=90,
-        )
-        resp.raise_for_status()
-        return resp.json()["message"]["content"].strip()
+        return llm.generate(prompt, max_tokens=600)
     except Exception as e:
-        print(f"  [Pesquisador] Analise Ollama falhou: {e}")
+        print(f"  [Pesquisador] Analise Gemini falhou: {e}")
         return ""
 
 
@@ -179,7 +170,7 @@ def run() -> str:
     web_raw = _scrape_web(SEARCH_QUERIES)
     if web_raw:
         print(f"  [Pesquisador] {len(web_raw)} chars coletados — analisando com IA...")
-        analysis = _ollama_analyze(web_raw)
+        analysis = _analyze_web(web_raw)
         if analysis:
             sections.append(f"=== TENDENCIAS E INSIGHTS WEB (TEMPO REAL) ===\n{analysis}")
     else:

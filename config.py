@@ -31,9 +31,8 @@ INSTAGRAM_HANDLE = "@topagenda.online"
 OUTPUT_DIR = os.getenv("OUTPUT_DIR", "/app/output")
 ASSETS_DIR = os.getenv("ASSETS_DIR", "/app/assets")
 
-# Ollama — modelo local gratuito (roda na VPS)
-OLLAMA_BASE_URL  = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434")
-OLLAMA_MODEL     = os.getenv("OLLAMA_MODEL", "qwen2.5:7b")
+# Gemini — LLM via Google AI Studio (gratuito, chave em GOOGLE_API_KEY)
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
 # ── Pilares de Conteúdo Estratégicos ─────────────────────────
 # Inspirado em: agency-agents (Content Creator + Brand Guardian)

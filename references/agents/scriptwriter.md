@@ -55,7 +55,6 @@ Acesse topagenda.online e organize sua agenda em 5 minutos. 👇"
 
 **headline**: MAIUSCULAS, 4-7 palavras, SEM EMOJI, deve ser o hook
 **body_text**: minusculas, max 10 palavras, SEM EMOJI, complementa o headline
-**image_description**: em INGLES, especifica (nicho + ambiente + acao + mood)
 
 **Estrutura de carrossel:**
 - Slide 1: Hook — para o scroll, apresenta a dor

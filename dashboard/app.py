@@ -19,7 +19,8 @@ from config import OUTPUT_DIR, MAX_POSTS_PER_DAY, POST_TIMES
 class _PollFilter(logging.Filter):
     def filter(self, record):
         msg = record.getMessage()
-        return "/api/status" not in msg and "/api/posts" not in msg
+        noisy = ("/api/status", "/api/posts", "/api/files", "/api/instagram", "/output/")
+        return not any(n in msg for n in noisy)
 
 logging.getLogger("werkzeug").addFilter(_PollFilter())
 

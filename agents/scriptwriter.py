@@ -9,26 +9,14 @@ Incorpora:
 """
 import json
 import random
-import requests
-from agents import skill_loader
+from agents import skill_loader, llm
 from config import (
-    OLLAMA_BASE_URL, OLLAMA_MODEL,
     PRODUCT_NAME, PRODUCT_URL, INSTAGRAM_HANDLE,
     HOOK_TYPES, BRAND_VOICE,
 )
 
 SKILL = skill_loader.load("scriptwriter")
 
-
-def _ollama(prompt: str, max_tokens: int = 2048) -> str:
-    resp = requests.post(
-        f"{OLLAMA_BASE_URL}/api/chat",
-        json={"model": OLLAMA_MODEL, "messages": [{"role": "user", "content": prompt}], "stream": False,
-              "options": {"num_predict": max_tokens}},
-        timeout=300
-    )
-    resp.raise_for_status()
-    return resp.json()["message"]["content"].strip()
 
 # Hashtags da marca (sempre incluidas)
 HASHTAGS_BRANDED = [
@@ -134,8 +122,7 @@ Crie o roteiro completo. Retorne APENAS um JSON valido:
     {{
       "slide_number": 1,
       "headline": "HOOK EM MAIUSCULAS, max 7 palavras, sem emoji — o gancho principal",
-      "body_text": "complemento direto que reforça o hook, max 10 palavras, sem emoji",
-      "image_description": "cena fotorealista em INGLES para IA gerar (especifica: nicho, ambiente, acao, mood). OBRIGATORIO incluir: cores da marca — azul medio (#1B6FBB) como iluminacao ambiente ou roupa, verde (#4DB648) em detalhes do cenario, amarelo (#FFC107) como destaque pontual. Ex: 'Brazilian hairdresser in a modern salon with blue ambient lighting, wearing a blue apron, green plants in background, warm yellow accent light'"
+      "body_text": "complemento direto que reforça o hook, max 10 palavras, sem emoji"
     }}
   ],
   "caption": "legenda completa AIDA em portugues brasileiro com emojis, 4-6 paragrafos, termina com CTA e link",
@@ -148,12 +135,11 @@ REGRAS CRITICAS:
 - headline: MAIUSCULAS, max 7 palavras, deve ser o hook — especifico e impactante
 - body_text: max 10 palavras, sem emoji, complementa o headline
 - Caption: estrutura AIDA completa, emojis a vontade, termina SEMPRE com link topagenda.online
-- image_description: em INGLES, especifica — mencione o nicho (hairdresser/barber/manicurist/etc), ambiente e acao
 - Inclua 25-30 hashtags relevantes sem repetir
 - Para carrossel: cada slide deve ter uma ideia propria que avança a narrativa
 - Slide 1 = hook / Slides do meio = desenvolvimento / Ultimo slide = CTA"""
 
-    text = _ollama(prompt, max_tokens=2048)
+    text = llm.generate(prompt, max_tokens=2048)
     if text.startswith("```"):
         text = text.split("```")[1]
         if text.startswith("json"):

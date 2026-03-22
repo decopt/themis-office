@@ -104,18 +104,60 @@ body {{
   inset: 0;
   background-image: url('{bg_url}');
   background-size: cover;
-  background-position: center;
+  background-position: center top;
+  filter: blur(8px);
+  transform: scale(1.12);
+  transform-origin: center;
 }}
 .overlay {{
   position: absolute;
   inset: 0;
   background: linear-gradient(
     to bottom,
-    rgba(8,42,90,0.82) 0%,
-    rgba(8,42,90,0.22) 38%,
-    rgba(5,30,70,0.22) 62%,
-    rgba(5,30,70,0.92) 100%
+    rgba(5,25,60,0.88) 0%,
+    rgba(8,42,90,0.55) 35%,
+    rgba(5,30,70,0.50) 65%,
+    rgba(3,15,45,0.94) 100%
   );
+  z-index: 1;
+}}
+.deco-dots {{
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.07) 1.5px, transparent 1.5px);
+  background-size: 48px 48px;
+  z-index: 2;
+}}
+.deco-ring-1 {{
+  position: absolute;
+  width: 520px; height: 520px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(77,182,72,0.18);
+  top: -160px; right: -130px;
+  z-index: 2;
+}}
+.deco-ring-2 {{
+  position: absolute;
+  width: 300px; height: 300px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(27,111,187,0.25);
+  bottom: 50px; left: -70px;
+  z-index: 2;
+}}
+.deco-ring-3 {{
+  position: absolute;
+  width: 180px; height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(77,182,72,0.10) 0%, transparent 70%);
+  bottom: 200px; right: 60px;
+  z-index: 2;
+}}
+.deco-calendar {{
+  position: absolute;
+  bottom: 110px; right: 44px;
+  width: 140px; height: 140px;
+  opacity: 0.13;
+  z-index: 2;
 }}
 .accent-bar {{
   position: absolute;
@@ -220,6 +262,22 @@ body {{
 <div class="slide">
   <div class="bg"></div>
   <div class="overlay"></div>
+  <div class="deco-dots"></div>
+  <div class="deco-ring-1"></div>
+  <div class="deco-ring-2"></div>
+  <div class="deco-ring-3"></div>
+  <svg class="deco-calendar" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="5" y="20" width="110" height="95" rx="12" stroke="white" stroke-width="4"/>
+    <line x1="5" y1="48" x2="115" y2="48" stroke="white" stroke-width="3"/>
+    <rect x="24" y="8" width="14" height="26" rx="5" fill="rgba(77,182,72,0.8)"/>
+    <rect x="82" y="8" width="14" height="26" rx="5" fill="rgba(77,182,72,0.8)"/>
+    <circle cx="30" cy="68" r="5" fill="white"/>
+    <circle cx="60" cy="68" r="5" fill="white"/>
+    <circle cx="90" cy="68" r="5" fill="white"/>
+    <circle cx="30" cy="92" r="5" fill="white"/>
+    <circle cx="60" cy="92" r="5" fill="rgba(255,193,7,1)"/>
+    <circle cx="90" cy="92" r="5" fill="white"/>
+  </svg>
   <div class="accent-bar"></div>
   {dots}
   <div class="headline">{headline}</div>
@@ -279,17 +337,44 @@ body {{
   background-image: url('{bg_url}');
   background-size: cover;
   background-position: center top;
+  filter: blur(8px);
+  transform: scale(1.12);
+  transform-origin: center;
 }}
 .overlay {{
   position: absolute;
   inset: 0;
   background: linear-gradient(
     to bottom,
-    rgba(8,42,90,0.78) 0%,
-    rgba(8,42,90,0.18) 30%,
-    rgba(5,30,70,0.18) 60%,
-    rgba(5,30,70,0.94) 100%
+    rgba(5,25,60,0.88) 0%,
+    rgba(8,42,90,0.50) 30%,
+    rgba(5,30,70,0.50) 60%,
+    rgba(3,15,45,0.95) 100%
   );
+  z-index: 1;
+}}
+.deco-dots {{
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.07) 1.5px, transparent 1.5px);
+  background-size: 48px 48px;
+  z-index: 2;
+}}
+.deco-ring-1 {{
+  position: absolute;
+  width: 600px; height: 600px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(77,182,72,0.18);
+  top: -100px; right: -150px;
+  z-index: 2;
+}}
+.deco-ring-2 {{
+  position: absolute;
+  width: 350px; height: 350px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(27,111,187,0.22);
+  bottom: 300px; left: -80px;
+  z-index: 2;
 }}
 .accent-bar {{
   position: absolute;
@@ -361,6 +446,9 @@ body {{
 <div class="slide">
   <div class="bg"></div>
   <div class="overlay"></div>
+  <div class="deco-dots"></div>
+  <div class="deco-ring-1"></div>
+  <div class="deco-ring-2"></div>
   <div class="accent-bar"></div>
   <div class="headline">{headline}</div>
   <div class="caption-preview">{caption_preview}</div>
