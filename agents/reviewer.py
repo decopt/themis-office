@@ -162,7 +162,7 @@ Retorne APENAS um JSON valido:
   "strengths": ["ponto forte 1", "ponto forte 2"]
 }}"""
 
-    text = llm.generate(prompt, max_tokens=2048, json_mode=True)
+    text = llm.generate(prompt, max_tokens=4096, json_mode=True)
     text = llm.extract_json(text)
     review = json.loads(text)
 
