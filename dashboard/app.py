@@ -156,6 +156,67 @@ def api_reset():
     return jsonify({"message": "Estado resetado. Pipeline liberado."})
 
 
+@app.route("/api/files")
+def api_files():
+    """Lista arquivos de imagem gerados, agrupados por run."""
+    from pathlib import Path
+    output = Path(OUTPUT_DIR)
+    if not output.exists():
+        return jsonify([])
+
+    edited = sorted(output.glob("*_edited.jpg"), key=lambda p: p.stat().st_mtime, reverse=True)
+    stories = {f.name.split("_story")[0]: f.name for f in output.glob("*_story.jpg")}
+
+    groups = {}
+    for f in edited[:60]:
+        run_id = f.name.split("_slide")[0]
+        if run_id not in groups:
+            groups[run_id] = {"run_id": run_id, "slides": [], "story": stories.get(run_id), "mtime": f.stat().st_mtime}
+        groups[run_id]["slides"].append(f.name)
+
+    result = sorted(groups.values(), key=lambda x: x["mtime"], reverse=True)[:8]
+    for r in result:
+        del r["mtime"]
+    return jsonify(result)
+
+
+_ig_cache = {"data": None, "ts": 0}
+
+@app.route("/api/instagram")
+def api_instagram():
+    """Retorna perfil e últimos posts do Instagram (cache 5 min)."""
+    import time as _t
+    global _ig_cache
+    if _t.time() - _ig_cache["ts"] < 300 and _ig_cache["data"]:
+        return jsonify(_ig_cache["data"])
+
+    from config import INSTAGRAM_USER_ID, INSTAGRAM_ACCESS_TOKEN
+    if not INSTAGRAM_ACCESS_TOKEN or not INSTAGRAM_USER_ID:
+        return jsonify({"error": "Instagram nao configurado"})
+
+    try:
+        import requests as req
+        profile = req.get(
+            f"https://graph.instagram.com/{INSTAGRAM_USER_ID}",
+            params={"fields": "name,biography,followers_count,media_count,profile_picture_url",
+                    "access_token": INSTAGRAM_ACCESS_TOKEN},
+            timeout=10
+        ).json()
+
+        media = req.get(
+            f"https://graph.instagram.com/{INSTAGRAM_USER_ID}/media",
+            params={"fields": "id,caption,media_type,media_url,thumbnail_url,timestamp,permalink",
+                    "limit": 9, "access_token": INSTAGRAM_ACCESS_TOKEN},
+            timeout=10
+        ).json()
+
+        result = {"profile": profile, "media": media.get("data", [])}
+        _ig_cache = {"data": result, "ts": _t.time()}
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+
 @app.route("/output/<path:filename>")
 def serve_output(filename):
     return send_from_directory(OUTPUT_DIR, filename)

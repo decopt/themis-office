@@ -9,6 +9,7 @@ from datetime import datetime
 STATE_FILE = os.path.join(os.path.dirname(__file__), "output", "state.json")
 
 AGENTS = [
+    {"id": "researcher",        "name": "Pesquisador",  "icon": "search"},
     {"id": "strategist",        "name": "Estrategista", "icon": "brain"},
     {"id": "scriptwriter",      "name": "Roteirista",   "icon": "pen"},
     {"id": "designer",          "name": "Designer",     "icon": "image"},
