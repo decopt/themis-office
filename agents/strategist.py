@@ -116,7 +116,7 @@ REGRAS:
 - content_type feature_showcase: slides entre 2 e 4
 - theme deve ser especifico, nao generico"""
 
-    text = llm.generate(prompt, max_tokens=1024, json_mode=True)
+    text = llm.generate(prompt, max_tokens=4096, json_mode=True)
     print(f"  [Estrategista] RAW ({len(text)} chars): {repr(text[:300])}")
     text = llm.extract_json(text)
     print(f"  [Estrategista] JSON ({len(text)} chars): {repr(text[:200])}")
