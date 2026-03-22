@@ -30,3 +30,9 @@ test_*.jpg
 # Misc
 .DS_Store
 *.bak
+
+# Runtime files (gerados na VPS, nao versionados)
+output/*.json
+output/*.log
+state.json
+api_raw.json

@@ -10,12 +10,15 @@ import json
 import random
 import requests
 from datetime import datetime
+from agents import skill_loader
 from config import (
     OLLAMA_BASE_URL, OLLAMA_MODEL,
     PRODUCT_NAME, PRODUCT_URL, PRODUCT_DESCRIPTION,
     CONTENT_PILLARS, PILLAR_WEIGHTS,
     HOOK_TYPES, BRAND_VOICE, TARGET_NICHES, BRAZILIAN_SEASONAL,
 )
+
+SKILL = skill_loader.load("strategist")
 
 
 def _ollama(prompt: str, max_tokens: int = 1024) -> str:
@@ -72,7 +75,9 @@ def run(post_count_today: int = 0, research_context: str = "") -> dict:
         condensed = research_context[:2500]
         research_section = f"\n\nCONTEXTO DE REFERENCIAS E PADROES DE MERCADO (use como inspiracao):\n{condensed}"
 
-    prompt = f"""Voce e um estrategista de marketing digital especializado em aplicativos de agendamento para pequenos negocios brasileiros.
+    skill_section = f"\n{SKILL}\n---\n" if SKILL else ""
+
+    prompt = f"""{skill_section}Voce e um estrategista de marketing digital especializado em aplicativos de agendamento para pequenos negocios brasileiros.
 
 PRODUTO: {PRODUCT_NAME}
 DESCRICAO: {PRODUCT_DESCRIPTION}

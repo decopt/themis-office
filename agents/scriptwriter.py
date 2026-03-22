@@ -10,11 +10,14 @@ Incorpora:
 import json
 import random
 import requests
+from agents import skill_loader
 from config import (
     OLLAMA_BASE_URL, OLLAMA_MODEL,
     PRODUCT_NAME, PRODUCT_URL, INSTAGRAM_HANDLE,
     HOOK_TYPES, BRAND_VOICE,
 )
+
+SKILL = skill_loader.load("scriptwriter")
 
 
 def _ollama(prompt: str, max_tokens: int = 2048) -> str:
@@ -90,7 +93,9 @@ def run(strategy: dict) -> dict:
     niche_focus = strategy.get("niche_focus", ["profissional"])
     pillar_name = strategy.get("pillar_name", strategy.get("content_type", ""))
 
-    prompt = f"""Voce e um redator especializado em conteudo de alta conversao para Instagram de pequenos negocios brasileiros.
+    skill_section = f"\n{SKILL}\n---\n" if SKILL else ""
+
+    prompt = f"""{skill_section}Voce e um redator especializado em conteudo de alta conversao para Instagram de pequenos negocios brasileiros.
 
 PRODUTO: {PRODUCT_NAME} — {PRODUCT_URL}
 INSTAGRAM: {INSTAGRAM_HANDLE}

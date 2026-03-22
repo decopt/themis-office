@@ -5,7 +5,10 @@ Analisa o conteúdo e decide se aprova ou solicita ajuste.
 import json
 import os
 import requests
+from agents import skill_loader
 from config import OLLAMA_BASE_URL, OLLAMA_MODEL, PRODUCT_NAME
+
+SKILL = skill_loader.load("reviewer")
 
 
 def _ollama(prompt: str, max_tokens: int = 2048) -> str:
@@ -102,7 +105,9 @@ def run(strategy: dict, script: dict, image_paths: list) -> dict:
 
     pillar_name = strategy.get("pillar_name", strategy.get("content_type", ""))
 
-    prompt = f"""Voce e um revisor de marketing e Brand Guardian especializado em Instagram para pequenos negocios brasileiros.
+    skill_section = f"\n{SKILL}\n---\n" if SKILL else ""
+
+    prompt = f"""{skill_section}Voce e um revisor de marketing e Brand Guardian especializado em Instagram para pequenos negocios brasileiros.
 
 Sua funcao: garantir que cada post seja profissional, fiel a voz da marca e com potencial real de engajamento.
 
