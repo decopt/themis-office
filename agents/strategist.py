@@ -8,8 +8,8 @@ Incorpora:
 """
 import json
 import random
+import requests
 from datetime import datetime
-import anthropic
 from config import (
     OLLAMA_BASE_URL, OLLAMA_MODEL,
     PRODUCT_NAME, PRODUCT_URL, PRODUCT_DESCRIPTION,
@@ -17,7 +17,16 @@ from config import (
     HOOK_TYPES, BRAND_VOICE, TARGET_NICHES, BRAZILIAN_SEASONAL,
 )
 
-client = anthropic.Anthropic(base_url=OLLAMA_BASE_URL, api_key="ollama")
+
+def _ollama(prompt: str, max_tokens: int = 1024) -> str:
+    resp = requests.post(
+        f"{OLLAMA_BASE_URL}/api/chat",
+        json={"model": OLLAMA_MODEL, "messages": [{"role": "user", "content": prompt}], "stream": False,
+              "options": {"num_predict": max_tokens}},
+        timeout=300
+    )
+    resp.raise_for_status()
+    return resp.json()["message"]["content"].strip()
 
 
 def _pick_pillar() -> dict:
@@ -114,13 +123,7 @@ REGRAS:
 - content_type feature_showcase: slides entre 2 e 4
 - theme deve ser especifico, nao generico"""
 
-    response = client.messages.create(
-        model=OLLAMA_MODEL,
-        max_tokens=1024,
-        messages=[{"role": "user", "content": prompt}]
-    )
-
-    text = response.content[0].text.strip()
+    text = _ollama(prompt, max_tokens=1024)
     if text.startswith("```"):
         text = text.split("```")[1]
         if text.startswith("json"):

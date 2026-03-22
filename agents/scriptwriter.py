@@ -9,14 +9,23 @@ Incorpora:
 """
 import json
 import random
-import anthropic
+import requests
 from config import (
     OLLAMA_BASE_URL, OLLAMA_MODEL,
     PRODUCT_NAME, PRODUCT_URL, INSTAGRAM_HANDLE,
     HOOK_TYPES, BRAND_VOICE,
 )
 
-client = anthropic.Anthropic(base_url=OLLAMA_BASE_URL, api_key="ollama")
+
+def _ollama(prompt: str, max_tokens: int = 2048) -> str:
+    resp = requests.post(
+        f"{OLLAMA_BASE_URL}/api/chat",
+        json={"model": OLLAMA_MODEL, "messages": [{"role": "user", "content": prompt}], "stream": False,
+              "options": {"num_predict": max_tokens}},
+        timeout=300
+    )
+    resp.raise_for_status()
+    return resp.json()["message"]["content"].strip()
 
 # Hashtags da marca (sempre incluidas)
 HASHTAGS_BRANDED = [
@@ -139,13 +148,7 @@ REGRAS CRITICAS:
 - Para carrossel: cada slide deve ter uma ideia propria que avança a narrativa
 - Slide 1 = hook / Slides do meio = desenvolvimento / Ultimo slide = CTA"""
 
-    response = client.messages.create(
-        model=OLLAMA_MODEL,
-        max_tokens=2048,
-        messages=[{"role": "user", "content": prompt}]
-    )
-
-    text = response.content[0].text.strip()
+    text = _ollama(prompt, max_tokens=2048)
     if text.startswith("```"):
         text = text.split("```")[1]
         if text.startswith("json"):
