@@ -117,7 +117,9 @@ REGRAS:
 - theme deve ser especifico, nao generico"""
 
     text = llm.generate(prompt, max_tokens=1024, json_mode=True)
+    print(f"  [Estrategista] RAW ({len(text)} chars): {repr(text[:300])}")
     text = llm.extract_json(text)
+    print(f"  [Estrategista] JSON ({len(text)} chars): {repr(text[:200])}")
     strategy = json.loads(text)
 
     # Garante que slides seja int valido
