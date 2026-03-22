@@ -140,12 +140,7 @@ REGRAS CRITICAS:
 - Slide 1 = hook / Slides do meio = desenvolvimento / Ultimo slide = CTA"""
 
     text = llm.generate(prompt, max_tokens=2048, json_mode=True)
-    if text.startswith("```"):
-        text = text.split("```")[1]
-        if text.startswith("json"):
-            text = text[4:]
-    text = text.strip()
-
+    text = llm.extract_json(text)
     script = json.loads(text)
 
     # Monta hashtags em 3 camadas garantidas

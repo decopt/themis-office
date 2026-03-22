@@ -117,12 +117,7 @@ REGRAS:
 - theme deve ser especifico, nao generico"""
 
     text = llm.generate(prompt, max_tokens=1024, json_mode=True)
-    if text.startswith("```"):
-        text = text.split("```")[1]
-        if text.startswith("json"):
-            text = text[4:]
-    text = text.strip()
-
+    text = llm.extract_json(text)
     strategy = json.loads(text)
 
     # Garante que slides seja int valido

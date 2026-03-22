@@ -163,12 +163,7 @@ Retorne APENAS um JSON valido:
 }}"""
 
     text = llm.generate(prompt, max_tokens=2048, json_mode=True)
-    if text.startswith("```"):
-        text = text.split("```")[1]
-        if text.startswith("json"):
-            text = text[4:]
-    text = text.strip()
-
+    text = llm.extract_json(text)
     review = json.loads(text)
 
     # Garante consistência: approved só é True se score >= 80
