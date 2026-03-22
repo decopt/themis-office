@@ -1,5 +1,5 @@
 """
-Helper central de LLM — Gemini 2.0 Flash via REST API.
+Helper central de LLM — Gemini 2.5 Flash via REST API.
 Usado por todos os agentes de texto (strategist, scriptwriter, reviewer, researcher).
 """
 import os
@@ -10,13 +10,17 @@ GEMINI_MODEL = "gemini-2.5-flash"
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 
 
-def generate(prompt: str, max_tokens: int = 1024) -> str:
+def generate(prompt: str, max_tokens: int = 1024, json_mode: bool = False) -> str:
+    gen_config = {"maxOutputTokens": max_tokens}
+    if json_mode:
+        gen_config["responseMimeType"] = "application/json"
+
     resp = requests.post(
         GEMINI_URL,
         params={"key": GEMINI_API_KEY},
         json={
             "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-            "generationConfig": {"maxOutputTokens": max_tokens},
+            "generationConfig": gen_config,
         },
         timeout=60,
     )

@@ -139,7 +139,7 @@ REGRAS CRITICAS:
 - Para carrossel: cada slide deve ter uma ideia propria que avança a narrativa
 - Slide 1 = hook / Slides do meio = desenvolvimento / Ultimo slide = CTA"""
 
-    text = llm.generate(prompt, max_tokens=2048)
+    text = llm.generate(prompt, max_tokens=2048, json_mode=True)
     if text.startswith("```"):
         text = text.split("```")[1]
         if text.startswith("json"):

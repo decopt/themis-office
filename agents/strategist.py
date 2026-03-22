@@ -116,7 +116,7 @@ REGRAS:
 - content_type feature_showcase: slides entre 2 e 4
 - theme deve ser especifico, nao generico"""
 
-    text = llm.generate(prompt, max_tokens=1024)
+    text = llm.generate(prompt, max_tokens=1024, json_mode=True)
     if text.startswith("```"):
         text = text.split("```")[1]
         if text.startswith("json"):
