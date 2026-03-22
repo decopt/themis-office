@@ -89,5 +89,14 @@ def set_done(success: bool, result: dict = None):
     _save(s)
 
 
+def reset():
+    """Força reset do estado (para quando pipeline fica travado)."""
+    s = _load()
+    s["running"] = False
+    s["current_agent"] = None
+    _save(s)
+    print("[State] Estado resetado — running=False")
+
+
 def get() -> dict:
     return _load()

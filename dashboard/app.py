@@ -3,6 +3,7 @@ Dashboard web para monitorar o pipeline do Instagram Bot.
 Serve o frontend React (build) + API JSON.
 """
 import json
+import logging
 import os
 import sys
 import threading
@@ -13,6 +14,14 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from flask import Flask, jsonify, send_from_directory, request
 import state
 from config import OUTPUT_DIR, MAX_POSTS_PER_DAY, POST_TIMES
+
+# Suprime log spam de polling (GET /api/status e /api/posts a cada 3s)
+class _PollFilter(logging.Filter):
+    def filter(self, record):
+        msg = record.getMessage()
+        return "/api/status" not in msg and "/api/posts" not in msg
+
+logging.getLogger("werkzeug").addFilter(_PollFilter())
 
 
 def _fix_encoding(obj):
@@ -140,6 +149,13 @@ def api_run():
     return jsonify({"message": "Pipeline iniciado!"})
 
 
+@app.route("/api/reset", methods=["POST"])
+def api_reset():
+    """Força reset do estado quando pipeline fica travado."""
+    state.reset()
+    return jsonify({"message": "Estado resetado. Pipeline liberado."})
+
+
 @app.route("/output/<path:filename>")
 def serve_output(filename):
     return send_from_directory(OUTPUT_DIR, filename)
@@ -156,6 +172,11 @@ def catch_all(path):
 
 if __name__ == "__main__":
     os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+    # Limpa estado stale (container reiniciou mas state.json ficou com running=True)
+    if state.get().get("running"):
+        print("[Dashboard] Estado stale detectado (running=True) — resetando.")
+        state.reset()
 
     # Inicia listener de comandos Telegram em background
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

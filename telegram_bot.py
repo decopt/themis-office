@@ -104,11 +104,22 @@ def _handle_status():
     _send("\n".join(lines))
 
 
+def _handle_parar():
+    """Força reset do pipeline travado."""
+    current = state.get()
+    if not current.get("running"):
+        _send("Pipeline nao esta rodando. Nada a parar.")
+        return
+    state.reset()
+    _send("Pipeline resetado. Use /gerar para iniciar novamente.")
+
+
 def _handle_ajuda():
     _send(
         "<b>Comandos disponiveis:</b>\n\n"
         "/gerar — cria e envia um novo post para aprovacao\n"
         "/status — mostra o estado atual do pipeline\n"
+        "/parar — reseta pipeline travado\n"
         "/ajuda — exibe esta mensagem"
     )
 
@@ -152,6 +163,9 @@ def _poll_loop():
                 elif text in ("/status", "/status@instatopagenda_bot"):
                     print("[TelegramBot] Comando /status recebido")
                     _handle_status()
+                elif text in ("/parar", "/parar@instatopagenda_bot", "/reset"):
+                    print("[TelegramBot] Comando /parar recebido")
+                    _handle_parar()
                 elif text in ("/ajuda", "/ajuda@instatopagenda_bot", "/start", "/help"):
                     _handle_ajuda()
 
