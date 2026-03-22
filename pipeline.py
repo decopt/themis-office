@@ -6,7 +6,8 @@ import os
 import traceback
 import uuid
 from datetime import datetime
-from agents import strategist, scriptwriter, designer, editor, reviewer, telegram_approver, publisher
+from agents import strategist, scriptwriter, designer, html_editor, editor, reviewer, telegram_approver, publisher
+from agents import researcher
 from config import OUTPUT_DIR
 import state
 
@@ -58,6 +59,12 @@ def run() -> dict:
 
     state.set_running(run_id)
 
+    # ── Agente 0: Pesquisador ───────────────────────────────
+    state.set_agent("researcher", "running")
+    print(f"[Agente 0] Pesquisador — carregando referencias...")
+    research_context = researcher.run()
+    state.set_agent("researcher", "done", f"{len(research_context)} chars de contexto")
+
     strategy = None
     script = None
     image_paths = []
@@ -70,7 +77,7 @@ def run() -> dict:
             state.set_agent("strategist", "running")
             print(f"[Agente 1] Estrategista (tentativa {attempt})...")
             if attempt == 1 or strategy is None:
-                strategy = strategist.run(post_count_today=post_count)
+                strategy = strategist.run(post_count_today=post_count, research_context=research_context)
                 print(f"  Tema: {strategy.get('theme')}")
             state.set_agent("strategist", "done", strategy.get("theme"))
 
@@ -90,10 +97,10 @@ def run() -> dict:
                 raise Exception("Designer não gerou nenhuma imagem")
             state.set_agent("designer", "done", f"{len(image_paths)} imagens")
 
-            # ── Agente 4: Editor ────────────────────────────────
+            # ── Agente 4: Editor HTML+Playwright ───────────────
             state.set_agent("editor", "running")
-            print(f"\n[Agente 4] Editor...")
-            edited = editor.run(image_paths, script, strategy)
+            print(f"\n[Agente 4] HTML Editor (Playwright)...")
+            edited = html_editor.run(image_paths, script, strategy)
             edited_paths = edited["feed"] if isinstance(edited, dict) else edited
             story_path = edited.get("story") if isinstance(edited, dict) else None
             print(f"  Imagens editadas: {len(edited_paths)}")

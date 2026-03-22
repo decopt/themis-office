@@ -40,7 +40,7 @@ def _format_types_for_pillar(pillar: dict) -> str:
     return " ou ".join(formats_map.get(f, f) for f in pillar["best_formats"])
 
 
-def run(post_count_today: int = 0) -> dict:
+def run(post_count_today: int = 0, research_context: str = "") -> dict:
     """
     Define a estrategia do proximo post usando pilares estrategicos.
     Retorna um dicionario com pilar, tema, hook, orientacoes visuais e CTA.
@@ -54,6 +54,13 @@ def run(post_count_today: int = 0) -> dict:
     today = datetime.now().strftime("%A, %d/%m/%Y")
 
     seasonal_section = f"\nCONTEXTO SAZONAL: {seasonal}" if seasonal else ""
+
+    # Injeta contexto de pesquisa se disponivel (condensado para nao inflar o prompt)
+    research_section = ""
+    if research_context and len(research_context) > 100:
+        # Usa apenas os primeiros 2500 chars para nao sobrecarregar o prompt
+        condensed = research_context[:2500]
+        research_section = f"\n\nCONTEXTO DE REFERENCIAS E PADROES DE MERCADO (use como inspiracao):\n{condensed}"
 
     prompt = f"""Voce e um estrategista de marketing digital especializado em aplicativos de agendamento para pequenos negocios brasileiros.
 
@@ -73,7 +80,7 @@ CTA DO PILAR: {pillar['cta']}
 TIPO DE HOOK PARA O PRIMEIRO SLIDE: {hook_type}
 COMO CRIAR ESSE HOOK: {hook_description}
 
-NICHOS EM FOCO HOJE: {', '.join(niche_focus)}{seasonal_section}
+NICHOS EM FOCO HOJE: {', '.join(niche_focus)}{seasonal_section}{research_section}
 
 DATA: {today}
 POSTS PUBLICADOS HOJE: {post_count_today}

@@ -1,0 +1,3 @@
+# Ignora arquivos de pattern gerados automaticamente pelo update_references.py
+*.md
+!.gitignore
