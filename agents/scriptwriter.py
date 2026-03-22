@@ -111,10 +111,12 @@ Ele precisa PARAR O SCROLL em menos de 2 segundos.
 Seja especifico ao nicho. Fale de uma DOR REAL.
 
 ━━━ ESTRUTURA DA CAPTION (FORMATO AIDA) ━━━
-A - ATENCAO: Linha de abertura forte — repete ou expande o hook. Max 2 linhas.
-I - INTERESSE: Contexto e empatia — mostre que voce entende a situacao do profissional. 2-3 linhas.
-D - DESEJO: Solucao + beneficios concretos do Top Agenda. 2-3 linhas.
-A - ACAO: CTA direto, claro e com link. Sempre termine com: "Acesse topagenda.online e comece gratis hoje 👇"
+A - ATENCAO: 1 linha de abertura forte — repete ou expande o hook.
+I - INTERESSE: 1-2 linhas de empatia — mostre que voce entende a dor.
+D - DESEJO: 1-2 linhas com o beneficio concreto do Top Agenda.
+A - ACAO: 1 linha de CTA. Sempre termine com: "Acesse topagenda.online e comece gratis hoje 👇"
+
+CAPTION TOTAL: maximo 150 palavras. Seja direto e objetivo.
 
 Crie o roteiro completo. Retorne APENAS um JSON valido:
 {{
@@ -125,8 +127,8 @@ Crie o roteiro completo. Retorne APENAS um JSON valido:
       "body_text": "complemento direto que reforça o hook, max 10 palavras, sem emoji"
     }}
   ],
-  "caption": "legenda completa AIDA em portugues brasileiro com emojis, 4-6 paragrafos, termina com CTA e link",
-  "hashtags": ["#hashtag1", "#hashtag2"],
+  "caption": "legenda curta AIDA em portugues brasileiro com emojis, maximo 150 palavras, termina com CTA e link",
+  "hashtags": ["#hashtag1", "#hashtag2", "#hashtag3"],
   "alt_text": "descricao acessivel da imagem principal em portugues"
 }}
 
@@ -134,8 +136,8 @@ REGRAS CRITICAS:
 - headline e body_text NUNCA devem ter emojis (viram quadrados na imagem)
 - headline: MAIUSCULAS, max 7 palavras, deve ser o hook — especifico e impactante
 - body_text: max 10 palavras, sem emoji, complementa o headline
-- Caption: estrutura AIDA completa, emojis a vontade, termina SEMPRE com link topagenda.online
-- Inclua 25-30 hashtags relevantes sem repetir
+- Caption: MAXIMO 150 PALAVRAS — seja direto, sem enrolacao
+- hashtags: EXATAMENTE 3 a 5 hashtags — apenas os mais relevantes para o nicho
 - Para carrossel: cada slide deve ter uma ideia propria que avança a narrativa
 - Slide 1 = hook / Slides do meio = desenvolvimento / Ultimo slide = CTA"""
 
@@ -143,14 +145,15 @@ REGRAS CRITICAS:
     text = llm.extract_json(text)
     script = json.loads(text)
 
-    # Monta hashtags em 3 camadas garantidas
-    niche_tags = _get_niche_hashtags(niche_focus)
-    medium_tags = random.sample(HASHTAGS_MEDIUM, min(8, len(HASHTAGS_MEDIUM)))
-    broad_tags = random.sample(HASHTAGS_BROAD, min(4, len(HASHTAGS_BROAD)))
-
-    all_tags = set(script.get("hashtags", []))
-    for tag in HASHTAGS_BRANDED + niche_tags + medium_tags + broad_tags:
-        all_tags.add(tag)
-    script["hashtags"] = list(all_tags)[:30]
+    # Garante entre 3 e 5 hashtags: usa as do LLM + completa com branded/niche se faltar
+    llm_tags = script.get("hashtags", [])[:5]
+    if len(llm_tags) < 3:
+        niche_tags = _get_niche_hashtags(niche_focus)
+        for tag in HASHTAGS_BRANDED + niche_tags:
+            if tag not in llm_tags:
+                llm_tags.append(tag)
+            if len(llm_tags) >= 5:
+                break
+    script["hashtags"] = llm_tags[:5]
 
     return script
