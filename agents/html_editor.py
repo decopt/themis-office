@@ -389,10 +389,13 @@ def _render(html: str, out_path: str, width: int = 1080, height: int = 1080) -> 
         file_url = Path(os.path.abspath(html_path)).as_uri()
 
         with sync_playwright() as p:
-            browser = p.chromium.launch(args=["--no-sandbox", "--disable-setuid-sandbox"])
+            browser = p.chromium.launch(
+                args=["--no-sandbox", "--disable-setuid-sandbox"],
+                timeout=30000
+            )
             page = browser.new_page(viewport={"width": width, "height": height})
-            page.goto(file_url)
-            page.wait_for_load_state("load")
+            page.goto(file_url, timeout=20000)
+            page.wait_for_load_state("load", timeout=15000)
             page.wait_for_timeout(400)  # buffer para render de fontes
             page.screenshot(path=out_path, full_page=False, type="jpeg", quality=94)
             browser.close()
