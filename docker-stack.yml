@@ -47,7 +47,7 @@ services:
         - "traefik.http.routers.topagenda.tls.certresolver=letsencryptresolver"
         - "traefik.http.services.topagenda.loadbalancer.server.port=5000"
 
-  # Ollama — LLM local gratuito (qwen3.5 ~4.7GB RAM)
+  # Ollama — LLM local gratuito (qwen2.5:7b ~5.5GB RAM em uso)
   ollama:
     image: ollama/ollama:latest
     volumes:
@@ -62,7 +62,7 @@ services:
         delay: 15s
       resources:
         limits:
-          memory: 6g
+          memory: 7g
 
   # Servidor de imagens para o Instagram Graph API (porta 8080 direta)
   file-server:

@@ -33,7 +33,7 @@ ASSETS_DIR = os.getenv("ASSETS_DIR", "/app/assets")
 
 # Ollama — modelo local gratuito (roda na VPS)
 OLLAMA_BASE_URL  = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434")
-OLLAMA_MODEL     = os.getenv("OLLAMA_MODEL", "qwen2.5:3b")
+OLLAMA_MODEL     = os.getenv("OLLAMA_MODEL", "qwen2.5:7b")
 
 # ── Pilares de Conteúdo Estratégicos ─────────────────────────
 # Inspirado em: agency-agents (Content Creator + Brand Guardian)
